@@ -42,7 +42,11 @@ def predict_house_price(form_data):
         # Make API call to backend
         api_url = f"{BACKEND_API_URL}"
         print(f"Calling backend at: {api_url}")  # Debug logging
+        print(f"Payload: {payload}")  # Debug payload
         response = requests.post(api_url, json=payload, timeout=30)
+        
+        print(f"Backend response status: {response.status_code}")  # Debug response
+        print(f"Backend response text: {response.text}")  # Debug response content
         
         if response.status_code == 200:
             result = response.json()
