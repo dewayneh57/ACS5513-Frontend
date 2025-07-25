@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Petabyte Pirates - House Price Calculator</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+  </head>
+  <body>
+    <div class="header">
+      <img
+        src="{{ url_for('static', filename='PBPirates.png') }}"
+        alt="Petabyte Pirates Icon"
+      />
+      <span class="title">Petabyte Pirates - House Price Calculator</span>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div class="flash-message {{ category }}">{{ message }}</div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <div class="form-section">
+      <div class="form-header">
+        <h2>House Details Form</h2>
+      </div>
+      
+      <!-- Validation Message Area -->
+      <div id="validationMessage" class="validation-message" style="display: none;"></div>
+      
+      <form method="post" action="/calculate">
+        <!-- Model Selection - using form-field structure for proper alignment -->
+        <div class="form-field">
+          <label for="model_type">Prediction Model:</label>
+          <select id="model_type" name="model_type" title="Select the machine learning model for price prediction">
+            <option value="catboost" selected>CatBoost</option>
+            <option value="xgboost">XGBoost</option>
+            <option value="lightgbm">LightGBM</option>
+          </select>
+        </div>
+        
+        <!-- Empty spacer row for visual separation -->
+        <div class="form-field" style="margin-bottom: 10px;">
+          <div></div>
+          <div></div>
+        </div>
+        
+        <!-- Row 1: Year Built and Year Remodeled -->
+        <div class="form-field">
+          <label for="year_built">Year Built: <span class="required">*</span></label>
+          <input
+            type="number"
+            id="year_built"
+            name="year_built"
+            min="1800"
+            max="2025"
+            required
+            title="Year the house was originally built"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="year_remod_add">Year Remodeled:</label>
+          <input
+            type="number"
+            id="year_remod_add"
+            name="year_remod_add"
+            min="1800"
+            max="2025"
+            title="Year of last remodel or addition (leave blank if same as year built)"
+          />
+        </div>
+
+        <!-- Row 3: Half Baths and Full Baths -->
+        <div class="form-field">
+          <label for="half_baths">Number of Half Baths:</label>
+          <input
+            type="number"
+            id="half_baths"
+            name="half_baths"
+            min="0"
+            value="0"
+            title="Number of half bathrooms (toilet and sink only)"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="full_baths">Number of Full Baths:</label>
+          <input
+            type="number"
+            id="full_baths"
+            name="full_baths"
+            min="0"
+            value="0"
+            title="Number of full bathrooms (toilet, sink, and tub/shower)"
+          />
+        </div>
+
+        <!-- Row 4: Garage Cars and Garage Size -->
+        <div class="form-field">
+          <label for="garage_cars">Garage Cars:</label>
+          <select
+            id="garage_cars"
+            name="garage_cars"
+            title="Number of cars that can fit in the garage"
+          >
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4+</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="garage_finish">Garage Finish:</label>
+          <select
+            id="garage_finish"
+            name="garage_finish"
+            title="Garage interior finish level"
+          >
+            <option value="0" selected>No Garage</option>
+            <option value="1">Unfinished</option>
+            <option value="2">Rough Finished</option>
+            <option value="3">Finished</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="garage_size">Garage Size (sq ft):</label>
+          <input
+            type="number"
+            id="garage_size"
+            name="garage_size"
+            min="0"
+            value="0"
+            title="Square footage of the garage"
+          />
+        </div>
+
+        <!-- Square Footage Group Box -->
+        <div class="sqft-group-box">
+          <fieldset class="sqft-fieldset">
+            <legend>Square Footage Details <span class="required">*</span></legend>
+            
+            <div class="sqft-grid">
+              <!-- Row 1: 1st and 2nd Floor Square Feet -->
+              <div class="form-field">
+                <label for="first_flr_sf">1st Floor Living Area (sq ft):</label>
+                <input
+                  type="number"
+                  id="first_flr_sf"
+                  name="first_flr_sf"
+                  min="0"
+                  required
+                  title="Square feet of the first floor living area"
+                />
+              </div>
+
+              <div class="form-field">
+                <label for="second_flr_sf">2nd Floor Living Area (sq ft):</label>
+                <input
+                  type="number"
+                  id="second_flr_sf"
+                  name="second_flr_sf"
+                  min="0"
+                  value="0"
+                  title="Square feet of the second floor living area (0 if single story)"
+                />
+              </div>
+
+              <!-- Row 2: 3rd Floor and Basement Square Feet -->
+              <div class="form-field">
+                <label for="third_flr_sf">3rd Floor Living Area (sq ft):</label>
+                <input
+                  type="number"
+                  id="third_flr_sf"
+                  name="third_flr_sf"
+                  min="0"
+                  value="0"
+                  title="Square feet of the third floor living area (0 if not applicable)"
+                />
+              </div>
+
+              <div class="form-field">
+                <label for="bsmt_living_sf">Basement Living Area (sq ft):</label>
+                <input
+                  type="number"
+                  id="bsmt_living_sf"
+                  name="bsmt_living_sf"
+                  min="0"
+                  value="0"
+                  title="Square feet of finished basement living area (0 if no basement or unfinished)"
+                />
+              </div>
+
+              <!-- Row 3: Total Ground Floor (spanning both columns) -->
+              <div class="form-field sqft-total">
+                <label for="total_ground_sf">Total Ground Living Area (sq ft):</label>
+                <input
+                  type="number"
+                  id="total_ground_sf"
+                  name="total_ground_sf"
+                  min="0"
+                  required
+                  title="Total square feet of ground floor living area"
+                />
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- Quality Attributes Group Box -->
+        <div class="quality-group-box">
+          <fieldset class="quality-fieldset">
+            <legend>Quality Attributes</legend>
+            
+            <div class="quality-grid">
+              <!-- Row 1: Overall Quality and Kitchen Quality -->
+              <div class="form-field">
+                <label for="overall_qual">Overall Quality: <span class="required">*</span></label>
+                <select
+                  id="overall_qual"
+                  name="overall_qual"
+                  required
+                  title="Overall material and finish quality of the house"
+                >
+                  <option value="">Select Quality</option>
+                  <option value="1">1 - Very Poor</option>
+                  <option value="2">2 - Poor</option>
+                  <option value="3">3 - Fair</option>
+                  <option value="4">4 - Below Average</option>
+                  <option value="5">5 - Average</option>
+                  <option value="6">6 - Above Average</option>
+                  <option value="7">7 - Good</option>
+                  <option value="8">8 - Very Good</option>
+                  <option value="9">9 - Excellent</option>
+                  <option value="10">10 - Very Excellent</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="kitchen_qual">Kitchen Quality:</label>
+                <select
+                  id="kitchen_qual"
+                  name="kitchen_qual"
+                  title="Kitchen quality rating"
+                >
+                  <option value="">Select Quality</option>
+                  <option value="1">1 - Very Poor</option>
+                  <option value="2">2 - Poor</option>
+                  <option value="3">3 - Fair</option>
+                  <option value="4">4 - Below Average</option>
+                  <option value="5">5 - Average</option>
+                  <option value="6">6 - Above Average</option>
+                  <option value="7">7 - Good</option>
+                  <option value="8">8 - Very Good</option>
+                  <option value="9">9 - Excellent</option>
+                  <option value="10">10 - Very Excellent</option>
+                </select>
+              </div>
+
+              <!-- Row 2: Exterior Quality and Heating Quality -->
+              <div class="form-field">
+                <label for="exterior_qual">Exterior Quality:</label>
+                <select
+                  id="exterior_qual"
+                  name="exterior_qual"
+                  title="Exterior material and finish quality"
+                >
+                  <option value="">Select Quality</option>
+                  <option value="1">1 - Very Poor</option>
+                  <option value="2">2 - Poor</option>
+                  <option value="3">3 - Fair</option>
+                  <option value="4">4 - Below Average</option>
+                  <option value="5">5 - Average</option>
+                  <option value="6">6 - Above Average</option>
+                  <option value="7">7 - Good</option>
+                  <option value="8">8 - Very Good</option>
+                  <option value="9">9 - Excellent</option>
+                  <option value="10">10 - Very Excellent</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="heating_qual">Heating Quality:</label>
+                <select
+                  id="heating_qual"
+                  name="heating_qual"
+                  title="Heating system quality rating"
+                >
+                  <option value="">Select Quality</option>
+                  <option value="1">1 - Very Poor</option>
+                  <option value="2">2 - Poor</option>
+                  <option value="3">3 - Fair</option>
+                  <option value="4">4 - Below Average</option>
+                  <option value="5">5 - Average</option>
+                  <option value="6">6 - Above Average</option>
+                  <option value="7">7 - Good</option>
+                  <option value="8">8 - Very Good</option>
+                  <option value="9">9 - Excellent</option>
+                  <option value="10">10 - Very Excellent</option>
+                </select>
+              </div>
+
+              <!-- Row 3: Basement Quality and Fireplace Quality -->
+              <div class="form-field">
+                <label for="basement_qual">Basement Quality:</label>
+                <select
+                  id="basement_qual"
+                  name="basement_qual"
+                  title="Basement quality rating"
+                >
+                  <option value="">Select Quality</option>
+                  <option value="1">1 - Very Poor</option>
+                  <option value="2">2 - Poor</option>
+                  <option value="3">3 - Fair</option>
+                  <option value="4">4 - Below Average</option>
+                  <option value="5">5 - Average</option>
+                  <option value="6">6 - Above Average</option>
+                  <option value="7">7 - Good</option>
+                  <option value="8">8 - Very Good</option>
+                  <option value="9">9 - Excellent</option>
+                  <option value="10">10 - Very Excellent</option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="fireplace_qual">Fireplace Quality:</label>
+                <select
+                  id="fireplace_qual"
+                  name="fireplace_qual"
+                  title="Fireplace quality rating"
+                >
+                  <option value="">Select Quality</option>
+                  <option value="1">1 - Very Poor</option>
+                  <option value="2">2 - Poor</option>
+                  <option value="3">3 - Fair</option>
+                  <option value="4">4 - Below Average</option>
+                  <option value="5">5 - Average</option>
+                  <option value="6">6 - Above Average</option>
+                  <option value="7">7 - Good</option>
+                  <option value="8">8 - Very Good</option>
+                  <option value="9">9 - Excellent</option>
+                  <option value="10">10 - Very Excellent</option>
+                </select>
+              </div>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="form-submit">
+          <button type="submit" onclick="return validateForm()">Calculate Price</button>
+        </div>
+      </form>
+
+      <script>
+        function validateForm() {
+          // Clear any existing error styling and messages
+          clearErrorStyling();
+          hideValidationMessage();
+
+          var hasErrors = false;
+
+          // Check if Overall Quality is selected
+          var overallQual = document.getElementById("overall_qual");
+          if (overallQual.value === "" || overallQual.value === null) {
+            addErrorStyling(overallQual);
+            showValidationMessage("Please select an Overall Quality rating.");
+            hasErrors = true;
+          }
+
+          // Validate all numeric fields for negative values
+          var numericFields = [
+            { id: "year_built", name: "Year Built", min: 1800, max: 2025 },
+            { id: "year_remod_add", name: "Year Remodeled", min: 1800, max: 2025, optional: true },
+            { id: "first_flr_sf", name: "1st Floor Square Feet", min: 0 },
+            { id: "second_flr_sf", name: "2nd Floor Square Feet", min: 0 },
+            { id: "third_flr_sf", name: "3rd Floor Square Feet", min: 0 },
+            { id: "bsmt_living_sf", name: "Basement Living Square Feet", min: 0 },
+            { id: "total_ground_sf", name: "Total Ground Square Feet", min: 0 },
+            { id: "half_baths", name: "Number of Half Baths", min: 0 },
+            { id: "full_baths", name: "Number of Full Baths", min: 0 },
+            { id: "garage_size", name: "Garage Size", min: 0 }
+          ];
+
+          for (var i = 0; i < numericFields.length; i++) {
+            var field = numericFields[i];
+            var element = document.getElementById(field.id);
+            var value = parseFloat(element.value);
+            
+            // Skip validation for optional fields that are empty
+            if (field.optional && (element.value === "" || isNaN(value))) {
+              continue;
+            }
+            
+            // Check for negative values or values outside range
+            if (!isNaN(value)) {
+              if (value < field.min) {
+                addErrorStyling(element);
+                showValidationMessage(field.name + " cannot be less than " + field.min + ".");
+                hasErrors = true;
+                break;
+              }
+              if (field.max && value > field.max) {
+                addErrorStyling(element);
+                showValidationMessage(field.name + " cannot be greater than " + field.max + ".");
+                hasErrors = true;
+                break;
+              }
+            }
+          }
+
+          // Check if at least one square footage value is provided and total > 0
+          // Include total ground floor in the validation check
+          var firstFlr =
+            parseFloat(document.getElementById("first_flr_sf").value) || 0;
+          var secondFlr =
+            parseFloat(document.getElementById("second_flr_sf").value) || 0;
+          var thirdFlr =
+            parseFloat(document.getElementById("third_flr_sf").value) || 0;
+          var bsmtLiving =
+            parseFloat(document.getElementById("bsmt_living_sf").value) || 0;
+          var totalGround =
+            parseFloat(document.getElementById("total_ground_sf").value) || 0;
+
+          // Check if any square footage field has a value > 0
+          var hasSquareFootage = firstFlr > 0 || secondFlr > 0 || thirdFlr > 0 || bsmtLiving > 0 || totalGround > 0;
+
+          if (!hasSquareFootage) {
+            // Highlight all square footage fields if none have valid values
+            addErrorStyling(document.getElementById("first_flr_sf"));
+            addErrorStyling(document.getElementById("second_flr_sf"));
+            addErrorStyling(document.getElementById("third_flr_sf"));
+            addErrorStyling(document.getElementById("bsmt_living_sf"));
+            addErrorStyling(document.getElementById("total_ground_sf"));
+            showValidationMessage(
+              "Please enter at least one square footage value. At least one living area field must be greater than 0."
+            );
+            hasErrors = true;
+          }
+
+          // Validate garage field consistency
+          if (!hasErrors) {
+            var garageCars = parseInt(document.getElementById("garage_cars").value) || 0;
+            var garageFinish = parseInt(document.getElementById("garage_finish").value) || 0;
+            var garageSize = parseFloat(document.getElementById("garage_size").value) || 0;
+
+            // Check for garage field inconsistencies
+            if (garageCars === 0 && (garageFinish > 0 || garageSize > 0)) {
+              addErrorStyling(document.getElementById("garage_cars"));
+              addErrorStyling(document.getElementById("garage_finish"));
+              addErrorStyling(document.getElementById("garage_size"));
+              showValidationMessage("Garage fields are inconsistent. If garage cars is 0, finish must be 'No Garage' and size must be 0.");
+              hasErrors = true;
+            } else if (garageCars > 0 && (garageFinish === 0 || garageSize === 0)) {
+              addErrorStyling(document.getElementById("garage_cars"));
+              addErrorStyling(document.getElementById("garage_finish"));
+              addErrorStyling(document.getElementById("garage_size"));
+              showValidationMessage("Garage fields are inconsistent. If garage has cars, finish cannot be 'No Garage' and size cannot be 0.");
+              hasErrors = true;
+            } else if (garageFinish > 0 && (garageCars === 0 || garageSize === 0)) {
+              addErrorStyling(document.getElementById("garage_cars"));
+              addErrorStyling(document.getElementById("garage_finish"));
+              addErrorStyling(document.getElementById("garage_size"));
+              showValidationMessage("Garage fields are inconsistent. If garage has a finish, cars and size cannot be 0.");
+              hasErrors = true;
+            } else if (garageSize > 0 && (garageCars === 0 || garageFinish === 0)) {
+              addErrorStyling(document.getElementById("garage_cars"));
+              addErrorStyling(document.getElementById("garage_finish"));
+              addErrorStyling(document.getElementById("garage_size"));
+              showValidationMessage("Garage fields are inconsistent. If garage has size, cars cannot be 0 and finish cannot be 'No Garage'.");
+              hasErrors = true;
+            }
+          }
+
+          return !hasErrors;
+        }
+
+        function addErrorStyling(element) {
+          element.classList.add("error");
+        }
+
+        function clearErrorStyling() {
+          var errorElements = document.querySelectorAll(".error");
+          errorElements.forEach(function (element) {
+            element.classList.remove("error");
+          });
+        }
+
+        function showValidationMessage(message, type = 'error') {
+          var messageDiv = document.getElementById("validationMessage");
+          messageDiv.textContent = message;
+          
+          // Remove existing type classes
+          messageDiv.classList.remove('error', 'success', 'info');
+          
+          // Add the appropriate type class (default is error styling from CSS)
+          if (type !== 'error') {
+            messageDiv.classList.add(type);
+          }
+          
+          messageDiv.style.display = "block";
+          messageDiv.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+
+        function hideValidationMessage() {
+          var messageDiv = document.getElementById("validationMessage");
+          messageDiv.style.display = "none";
+        }
+
+        // Garage field interdependency validation
+        function setupGarageValidation() {
+          var garageCars = document.getElementById("garage_cars");
+          var garageFinish = document.getElementById("garage_finish");
+          var garageSize = document.getElementById("garage_size");
+
+          // Add event listeners for garage fields
+          garageCars.addEventListener("change", validateGarageFields);
+          garageFinish.addEventListener("change", validateGarageFields);
+          garageSize.addEventListener("input", validateGarageFields);
+        }
+
+        function validateGarageFields() {
+          var garageCars = document.getElementById("garage_cars");
+          var garageFinish = document.getElementById("garage_finish");
+          var garageSize = document.getElementById("garage_size");
+
+          var carsValue = parseInt(garageCars.value) || 0;
+          var finishValue = parseInt(garageFinish.value) || 0;
+          var sizeValue = parseFloat(garageSize.value) || 0;
+
+          // Rule 1: If garage cars is 0, then finish must be "No Garage" and size must be 0
+          if (carsValue === 0) {
+            if (finishValue !== 0) {
+              garageFinish.value = "0";
+              showValidationMessage("Garage finish set to 'No Garage' because garage cars is 0.");
+            }
+            if (sizeValue !== 0) {
+              garageSize.value = "0";
+              garageSize.classList.remove("error"); // Clear error styling when auto-setting to 0
+              showValidationMessage("Garage size set to 0 because garage cars is 0.");
+            }
+            // Clear any existing error styling when cars is 0
+            garageSize.classList.remove("error");
+            garageFinish.classList.remove("error");
+            garageCars.classList.remove("error");
+          }
+          
+          // Rule 2: If garage cars > 0, finish can't be "No Garage" and size can't be 0
+          else if (carsValue > 0) {
+            if (finishValue === 0) {
+              garageFinish.value = "1"; // Default to "Unfinished"
+              showValidationMessage("Garage finish changed from 'No Garage' because garage has " + carsValue + " car(s).");
+            }
+            if (sizeValue === 0) {
+              addErrorStyling(garageSize);
+              showValidationMessage("Please enter a garage size greater than 0 because garage has " + carsValue + " car(s).");
+            }
+          }
+
+          // Rule 3: If garage finish is not "No Garage", cars and size can't be 0
+          if (finishValue > 0) {
+            if (carsValue === 0) {
+              garageCars.value = "1"; // Default to 1 car
+              showValidationMessage("Garage cars set to 1 because garage has a finish.");
+            }
+            if (sizeValue === 0) {
+              addErrorStyling(garageSize);
+              showValidationMessage("Please enter a garage size greater than 0 because garage has a finish.");
+            }
+          }
+
+          // Rule 4: If garage size > 0, cars can't be 0 and finish can't be "No Garage"
+          if (sizeValue > 0) {
+            if (carsValue === 0) {
+              garageCars.value = "1"; // Default to 1 car
+              showValidationMessage("Garage cars set to 1 because garage has size.");
+            }
+            if (finishValue === 0) {
+              garageFinish.value = "1"; // Default to "Unfinished"
+              showValidationMessage("Garage finish changed from 'No Garage' because garage has size.");
+            }
+          }
+        }
+
+        // Clear error styling when user starts typing/selecting
+        document.addEventListener("DOMContentLoaded", function () {
+          var formElements = document.querySelectorAll("input, select");
+          formElements.forEach(function (element) {
+            element.addEventListener("input", function () {
+              this.classList.remove("error");
+              hideValidationMessage();
+            });
+            element.addEventListener("change", function () {
+              this.classList.remove("error");
+              hideValidationMessage();
+            });
+          });
+
+          // Setup garage field interdependency validation
+          setupGarageValidation();
+
+          // Auto-copy year built to year remodeled when form is submitted if year remodeled is empty
+          var form = document.querySelector("form");
+          form.addEventListener("submit", function (event) {
+            var yearBuilt = document.getElementById("year_built").value;
+            var yearRemod = document.getElementById("year_remod_add");
+            
+            // If year built has a value but year remodeled is empty, copy year built to year remodeled
+            if (yearBuilt && !yearRemod.value) {
+              yearRemod.value = yearBuilt;
+            }
+          });
+        });
+      </script>
+
+      <!-- Section Separator -->
+      <hr class="section-separator" />
+
+      <!-- Results Section -->
+      {% if results and results|length > 0 %}
+      <div class="results-section">
+        <h2>Calculation Results</h2>
+        <p style="margin: 0 0 15px 0; color: #666; font-style: italic;">
+          💡 <strong>Tip:</strong> Click on any row to re-populate the form with those values for easy recalculation.
+        </p>
+        <table id="resultsTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0)">Model</th>
+            <th onclick="sortTable(1)">Overall Quality</th>
+            <th onclick="sortTable(2)">Year Built</th>
+            <th onclick="sortTable(3)">Year Remod/Add</th>
+            <th onclick="sortTable(4)">1st Floor SF</th>
+            <th onclick="sortTable(5)">2nd Floor SF</th>
+            <th onclick="sortTable(6)">3rd Floor SF</th>
+            <th onclick="sortTable(7)">Basement Living SF</th>
+            <th onclick="sortTable(8)">Total Ground SF</th>
+            <th onclick="sortTable(9)">Half Baths</th>
+            <th onclick="sortTable(10)">Full Baths</th>
+            <th onclick="sortTable(11)">Garage Cars</th>
+            <th onclick="sortTable(12)">Garage Finish</th>
+            <th onclick="sortTable(13)">Garage Size</th>
+            <th onclick="sortTable(14)">Kitchen Quality</th>
+            <th onclick="sortTable(15)">Exterior Quality</th>
+            <th onclick="sortTable(16)">Heating Quality</th>
+            <th onclick="sortTable(17)">Basement Quality</th>
+            <th onclick="sortTable(18)">Fireplace Quality</th>
+            <th onclick="sortTable(19)">Suggested Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in results %}
+          <tr class="clickable-row" onclick="populateFormFromRow(this)" title="Click to re-populate form with these values"
+              data-model-type="{{ row.model_type if row.model_type else 'catboost' }}"
+              data-overall-qual="{{ row.overall_qual }}"
+              data-year-built="{{ row.year_built }}"
+              data-year-remod-add="{{ row.year_remod_add }}"
+              data-first-flr-sf="{{ row.first_flr_sf }}"
+              data-second-flr-sf="{{ row.second_flr_sf }}"
+              data-third-flr-sf="{{ row.third_flr_sf }}"
+              data-bsmt-living-sf="{{ row.bsmt_living_sf }}"
+              data-total-ground-sf="{{ row.total_ground_sf }}"
+              data-half-baths="{{ row.half_baths }}"
+              data-full-baths="{{ row.full_baths }}"
+              data-garage-cars="{{ row.garage_cars }}"
+              data-garage-finish="{{ row.garage_finish }}"
+              data-garage-size="{{ row.garage_size }}"
+              data-kitchen-qual="{{ row.kitchen_qual if row.kitchen_qual else '' }}"
+              data-exterior-qual="{{ row.exterior_qual if row.exterior_qual else '' }}"
+              data-heating-qual="{{ row.heating_qual if row.heating_qual else '' }}"
+              data-basement-qual="{{ row.basement_qual if row.basement_qual else '' }}"
+              data-fireplace-qual="{{ row.fireplace_qual if row.fireplace_qual else '' }}">
+            <td>{{ row.model_type.upper() if row.model_type else 'CATBOOST' }}</td>
+            <td>{{ row.overall_qual }}</td>
+            <td>{{ row.year_built }}</td>
+            <td>{{ row.year_remod_add }}</td>
+            <td>{{ row.first_flr_sf }}</td>
+            <td>{{ row.second_flr_sf }}</td>
+            <td>{{ row.third_flr_sf }}</td>
+            <td>{{ row.bsmt_living_sf }}</td>
+            <td>{{ row.total_ground_sf }}</td>
+            <td>{{ row.half_baths }}</td>
+            <td>{{ row.full_baths }}</td>
+            <td>{{ row.garage_cars }}</td>
+            <td>{{ 
+              'Finished' if row.garage_finish == '3' else 
+              'Rough Finished' if row.garage_finish == '2' else 
+              'Unfinished' if row.garage_finish == '1' else 
+              'No Garage'
+            }}</td>
+            <td>{{ row.garage_size }}</td>
+            <td>{{ row.kitchen_qual if row.kitchen_qual else 'N/A' }}</td>
+            <td>{{ row.exterior_qual if row.exterior_qual else 'N/A' }}</td>
+            <td>{{ row.heating_qual if row.heating_qual else 'N/A' }}</td>
+            <td>{{ row.basement_qual if row.basement_qual else 'N/A' }}</td>
+            <td>{{ row.fireplace_qual if row.fireplace_qual else 'N/A' }}</td>
+            <td>{{ row.result }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% endif %}
+
+    <script>
+      // Function to populate form from a clicked table row
+      function populateFormFromRow(row) {
+        // Get data attributes from the clicked row
+        const data = row.dataset;
+        
+        // Show feedback that the row was clicked
+        row.style.backgroundColor = '#e3f2fd';
+        setTimeout(() => {
+          row.style.backgroundColor = '';
+        }, 1000);
+        
+        // Debug: Log the model type data to see what we're getting
+        console.log('Model type from row data:', data.modelType);
+        console.log('All row data:', data);
+        
+        // Populate form fields - make sure model_type is set first and correctly
+        // Try multiple ways to get the model type due to potential case conversion issues
+        const modelType = data.modelType || data.modeltype || row.getAttribute('data-model-type') || 'catboost';
+        document.getElementById('model_type').value = modelType;
+        console.log('Set model_type dropdown to:', modelType);
+        
+        document.getElementById('overall_qual').value = data.overallQual || '';
+        document.getElementById('year_built').value = data.yearBuilt || '';
+        document.getElementById('year_remod_add').value = data.yearRemodAdd || '';
+        document.getElementById('first_flr_sf').value = data.firstFlrSf || '';
+        document.getElementById('second_flr_sf').value = data.secondFlrSf || '';
+        document.getElementById('third_flr_sf').value = data.thirdFlrSf || '';
+        document.getElementById('bsmt_living_sf').value = data.bsmtLivingSf || '';
+        document.getElementById('total_ground_sf').value = data.totalGroundSf || '';
+        document.getElementById('half_baths').value = data.halfBaths || '';
+        document.getElementById('full_baths').value = data.fullBaths || '';
+        document.getElementById('garage_cars').value = data.garageCars || '';
+        document.getElementById('garage_finish').value = data.garageFinish || '';
+        document.getElementById('garage_size').value = data.garageSize || '';
+        document.getElementById('kitchen_qual').value = data.kitchenQual || '';
+        document.getElementById('exterior_qual').value = data.exteriorQual || '';
+        document.getElementById('heating_qual').value = data.heatingQual || '';
+        document.getElementById('basement_qual').value = data.basementQual || '';
+        document.getElementById('fireplace_qual').value = data.fireplaceQual || '';
+        
+        // Clear any validation errors
+        clearErrorStyling();
+        hideValidationMessage();
+        
+        // Scroll to the top of the form
+        document.querySelector('.form-section').scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+        
+        // Show a brief message to the user including which model was selected
+        showValidationMessage(`Form populated with selected row data using ${modelType.toUpperCase()} model. You can modify values and recalculate.`, "info");
+        setTimeout(() => {
+          hideValidationMessage();
+        }, 3000);
+      }
+
+      // Simple table sort function
+      function sortTable(n) {
+        var table,
+          rows,
+          switching,
+          i,
+          x,
+          y,
+          shouldSwitch,
+          dir,
+          switchcount = 0;
+        table = document.getElementById("resultsTable");
+        switching = true;
+        dir = "asc";
+        while (switching) {
+          switching = false;
+          rows = table.rows;
+          for (i = 1; i < rows.length - 1; i++) {
+            shouldSwitch = false;
+            x = rows[i].getElementsByTagName("TD")[n];
+            y = rows[i + 1].getElementsByTagName("TD")[n];
+            if (dir == "asc") {
+              if (
+                !isNaN(parseFloat(x.innerHTML)) &&
+                !isNaN(parseFloat(y.innerHTML))
+              ) {
+                if (parseFloat(x.innerHTML) > parseFloat(y.innerHTML)) {
+                  shouldSwitch = true;
+                  break;
+                }
+              } else if (
+                x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()
+              ) {
+                shouldSwitch = true;
+                break;
+              }
+            } else if (dir == "desc") {
+              if (
+                !isNaN(parseFloat(x.innerHTML)) &&
+                !isNaN(parseFloat(y.innerHTML))
+              ) {
+                if (parseFloat(x.innerHTML) < parseFloat(y.innerHTML)) {
+                  shouldSwitch = true;
+                  break;
+                }
+              } else if (
+                x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()
+              ) {
+                shouldSwitch = true;
+                break;
+              }
+            }
+          }
+          if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchcount++;
+          } else {
+            if (switchcount == 0 && dir == "asc") {
+              dir = "desc";
+              switching = true;
+            }
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
