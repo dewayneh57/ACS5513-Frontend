@@ -616,32 +616,30 @@
         <table id="resultsTable">
         <thead>
           <tr>
-            <th onclick="sortTable(0)">Model</th>
-            <th onclick="sortTable(1)">Overall Quality</th>
-            <th onclick="sortTable(2)">Year Built</th>
-            <th onclick="sortTable(3)">Year Remod/Add</th>
-            <th onclick="sortTable(4)">1st Floor SF</th>
-            <th onclick="sortTable(5)">2nd Floor SF</th>
-            <th onclick="sortTable(6)">3rd Floor SF</th>
-            <th onclick="sortTable(7)">Basement Living SF</th>
-            <th onclick="sortTable(8)">Total Ground SF</th>
-            <th onclick="sortTable(9)">Half Baths</th>
-            <th onclick="sortTable(10)">Full Baths</th>
-            <th onclick="sortTable(11)">Garage Cars</th>
-            <th onclick="sortTable(12)">Garage Finish</th>
-            <th onclick="sortTable(13)">Garage Size</th>
-            <th onclick="sortTable(14)">Kitchen Quality</th>
-            <th onclick="sortTable(15)">Exterior Quality</th>
-            <th onclick="sortTable(16)">Heating Quality</th>
-            <th onclick="sortTable(17)">Basement Quality</th>
-            <th onclick="sortTable(18)">Fireplace Quality</th>
-            <th onclick="sortTable(19)">Suggested Price</th>
+            <th onclick="sortTable(0)">Overall Quality</th>
+            <th onclick="sortTable(1)">Year Built</th>
+            <th onclick="sortTable(2)">Year Remod/Add</th>
+            <th onclick="sortTable(3)">1st Floor SF</th>
+            <th onclick="sortTable(4)">2nd Floor SF</th>
+            <th onclick="sortTable(5)">3rd Floor SF</th>
+            <th onclick="sortTable(6)">Basement Living SF</th>
+            <th onclick="sortTable(7)">Total Ground SF</th>
+            <th onclick="sortTable(8)">Half Baths</th>
+            <th onclick="sortTable(9)">Full Baths</th>
+            <th onclick="sortTable(10)">Garage Cars</th>
+            <th onclick="sortTable(11)">Garage Finish</th>
+            <th onclick="sortTable(12)">Garage Size</th>
+            <th onclick="sortTable(13)">Kitchen Quality</th>
+            <th onclick="sortTable(14)">Exterior Quality</th>
+            <th onclick="sortTable(15)">Heating Quality</th>
+            <th onclick="sortTable(16)">Basement Quality</th>
+            <th onclick="sortTable(17)">Fireplace Quality</th>
+            <th onclick="sortTable(18)">Suggested Price</th>
           </tr>
         </thead>
         <tbody>
           {% for row in results %}
           <tr class="clickable-row" onclick="populateFormFromRow(this)" title="Click to re-populate form with these values"
-              data-model-type="{{ row.model_type if row.model_type else 'catboost' }}"
               data-overall-qual="{{ row.overall_qual }}"
               data-year-built="{{ row.year_built }}"
               data-year-remod-add="{{ row.year_remod_add }}"
@@ -660,7 +658,6 @@
               data-heating-qual="{{ row.heating_qual if row.heating_qual else '' }}"
               data-basement-qual="{{ row.basement_qual if row.basement_qual else '' }}"
               data-fireplace-qual="{{ row.fireplace_qual if row.fireplace_qual else '' }}">
-            <td>{{ row.model_type.upper() if row.model_type else 'CATBOOST' }}</td>
             <td>{{ row.overall_qual }}</td>
             <td>{{ row.year_built }}</td>
             <td>{{ row.year_remod_add }}</td>
@@ -704,16 +701,10 @@
           row.style.backgroundColor = '';
         }, 1000);
         
-        // Debug: Log the model type data to see what we're getting
-        console.log('Model type from row data:', data.modelType);
+        // Debug: Log the row data to see what we're getting
         console.log('All row data:', data);
         
-        // Populate form fields - make sure model_type is set first and correctly
-        // Try multiple ways to get the model type due to potential case conversion issues
-        const modelType = data.modelType || data.modeltype || row.getAttribute('data-model-type') || 'catboost';
-        document.getElementById('model_type').value = modelType;
-        console.log('Set model_type dropdown to:', modelType);
-        
+        // Populate form fields
         document.getElementById('overall_qual').value = data.overallQual || '';
         document.getElementById('year_built').value = data.yearBuilt || '';
         document.getElementById('year_remod_add').value = data.yearRemodAdd || '';
@@ -743,8 +734,8 @@
           block: 'start'
         });
         
-        // Show a brief message to the user including which model was selected
-        showValidationMessage(`Form populated with selected row data using ${modelType.toUpperCase()} model. You can modify values and recalculate.`, "info");
+        // Show a brief message to the user
+        showValidationMessage(`Form populated with selected row data. You can modify values and recalculate.`, "info");
         setTimeout(() => {
           hideValidationMessage();
         }, 3000);
