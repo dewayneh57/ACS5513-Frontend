@@ -33,22 +33,6 @@
       <div id="validationMessage" class="validation-message" style="display: none;"></div>
       
       <form method="post" action="/calculate">
-        <!-- Model Selection - using form-field structure for proper alignment -->
-        <div class="form-field">
-          <label for="model_type">Prediction Model:</label>
-          <select id="model_type" name="model_type" title="Select the machine learning model for price prediction">
-            <option value="catboost" selected>CatBoost</option>
-            <option value="xgboost">XGBoost</option>
-            <option value="lightgbm">LightGBM</option>
-          </select>
-        </div>
-        
-        <!-- Empty spacer row for visual separation -->
-        <div class="form-field" style="margin-bottom: 10px;">
-          <div></div>
-          <div></div>
-        </div>
-        
         <!-- Row 1: Year Built and Year Remodeled -->
         <div class="form-field">
           <label for="year_built">Year Built: <span class="required">*</span></label>

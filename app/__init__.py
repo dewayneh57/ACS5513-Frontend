@@ -12,12 +12,11 @@ results = []
 # BACKEND_API_URL = 'http://localhost:10000/api'
 BACKEND_API_URL = 'https://acs5513-backend-10b9ebf9f648.herokuapp.com/'
 
-def predict_house_price(model_type, form_data):
+def predict_house_price(form_data):
     """Make prediction by calling the backend API"""
     try:
         # Prepare the request payload
         payload = {
-            'model_type': model_type,
             'features': {
                 'overall_qual': form_data.get('overall_qual'),
                 'year_built': form_data.get('year_built'),
@@ -120,10 +119,7 @@ def calculate():
         return redirect(url_for('home'))
     
     # Collect all form inputs
-    model_type = request.form.get('model_type', 'catboost')  # Default to catboost
-    
     data = {
-        'model_type': model_type,
         'overall_qual': overall_qual,
         'year_built': request.form.get('year_built'),
         'year_remod_add': request.form.get('year_remod_add'),
@@ -145,9 +141,9 @@ def calculate():
     }
     
     # Make prediction using the selected model
-    predicted_price = predict_house_price(model_type, request.form)
+    predicted_price = predict_house_price(request.form)
     data['result'] = predicted_price
     
     results.append(data)
-    flash(f'Calculation completed successfully using {model_type} model!', 'success')
+    flash(f'Calculation completed successfully!', 'success')
     return redirect(url_for('home'))
