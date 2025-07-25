@@ -9,7 +9,8 @@ app.secret_key = 'your-secret-key-here'  # Required for flash messages
 results = []
 
 # Backend API configuration
-BACKEND_API_URL = 'http://localhost:10000/api'
+# BACKEND_API_URL = 'http://localhost:10000/api'
+BACKEND_API_URL = 'https://acs5513-backend-10b9ebf9f648.herokuapp.com:10000/'
 
 def predict_house_price(model_type, form_data):
     """Make prediction by calling the backend API"""
