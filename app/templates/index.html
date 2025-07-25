@@ -609,7 +609,15 @@
       <!-- Results Section -->
       {% if results and results|length > 0 %}
       <div class="results-section">
-        <h2>Calculation Results</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h2 style="margin: 0;">Calculation Results</h2>
+          <form method="post" action="/clear_results" style="margin: 0;">
+            <button type="submit" style="background-color: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;" 
+                    title="Clear all calculation results">
+              Clear Results
+            </button>
+          </form>
+        </div>
         <p style="margin: 0 0 15px 0; color: #666; font-style: italic;">
           💡 <strong>Tip:</strong> Click on any row to re-populate the form with those values for easy recalculation.
         </p>

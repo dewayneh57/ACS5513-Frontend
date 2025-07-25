@@ -66,6 +66,14 @@ def predict_house_price(form_data):
 def home():
     return render_template('index.html', results=results)
 
+@app.route('/clear_results', methods=['POST'])
+def clear_results():
+    """Clear all calculation results"""
+    global results
+    results.clear()
+    flash('All results have been cleared.', 'success')
+    return redirect(url_for('home'))
+
 @app.route('/calculate', methods=['POST'])
 def calculate():
     # Server-side validation
